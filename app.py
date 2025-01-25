@@ -25,14 +25,12 @@ def webhook():
         hub_challenge = request.args.get("hub.challenge")
         hub_verify_token = request.args.get("hub.verify_token")
 
-        # Validate the verify token
         if hub_verify_token == VERIFY_TOKEN:
-            return hub_challenge  # Return the hub.challenge to confirm
+            return hub_challenge  
         else:
             return "Forbidden", 403
 
     elif request.method == "POST":
-        # Handle webhook POST requests here
         try:
             print(json.dumps(request.get_json(), indent=4))
         except Exception as e:
@@ -105,23 +103,19 @@ def get_instagram_data():
 # ------------------------------------Login page end----------------------------
 
 
+# =============== New method - Case 1 Login ================
 
-# Set your secret key for session management
 app.secret_key = 'your_secret_key'
-
-# Read the config file
 with open('config2.json', 'r') as json_file:
     config2_data = json.load(json_file)
     
-app_id2 = config2_data.get("app_id", "N/A")  # Using config2_data
-secret_id = config2_data.get("secret_id", "N/A")  # Using config2_data
+app_id2 = config2_data.get("app_id", "N/A")  
+secret_id = config2_data.get("secret_id", "N/A")  
 redirect_uri = "https://a658-103-72-75-85.ngrok-free.app/your_insta_token"
-
-# Renamed the function to avoid conflict
 @app.route('/login2')
 def login2():
     url = "https://www.instagram.com/oauth/authorize?"
-    url += f"client_id={app_id2}"  # No need for int()
+    url += f"client_id={app_id2}"  
     url += f"&redirect_uri={redirect_uri}"
     url += "&response_type=code"
     url += "&scope=" + (
@@ -132,15 +126,13 @@ def login2():
 
 @app.route("/your_insta_token")
 def your_insta_token():
-    # Get authorization code from request params
     authorization_code = request.args.get("code")
     if not authorization_code:
         return "<p>Error: Missing authorization code.</p>"
 
-    # Get access token
     url = "https://api.instagram.com/oauth/access_token"
     payload = {
-        "client_id": app_id2,  # Using correct app ID from the config
+        "client_id": app_id2,  
         "client_secret": secret_id,
         "grant_type": "authorization_code",
         "redirect_uri": redirect_uri,
@@ -149,23 +141,19 @@ def your_insta_token():
     response = requests.post(url, data=payload)
     data = response.json()
 
-    # Debugging: Print the response
     if 'access_token' not in data:
         return f"<p>Error: {data.get('error_message', 'Unexpected response')}. Response: {data}</p>"
 
-    # Extract access token
     user_access_token = data["access_token"]
     session['user_access_token'] = user_access_token
     return redirect(url_for('get_user_info')) 
     
 @app.route("/get_user_info")
 def get_user_info():
-    # Fetch long access token from session
     user_access_token = session.get("user_access_token")
     if not user_access_token:
         return "<p>Error: Access token is missing or expired.</p>"
 
-    # Fetch user profile info
     url_user = "https://graph.instagram.com/v21.0/me"
     payload_user = {
         "fields": "id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count",
@@ -173,12 +161,9 @@ def get_user_info():
     }
     response_user = requests.get(url_user, params=payload_user)
     user_data = response_user.json()
-
-    # Handle API response for user profile
     if "error" in user_data:
         return f"<p>Error fetching user info: {user_data.get('error', {}).get('message', 'Unknown error')}</p>"
 
-    # Fetch user's media data
     url_media = f"https://graph.instagram.com/v21.0/{user_data['id']}/media"
     payload_media = {
         "fields": "like_count",
@@ -186,8 +171,7 @@ def get_user_info():
     }
     response_media = requests.get(url_media, params=payload_media)
     media_data = response_media.json()
-
-    # Handle API response for media data
+    
     if "error" in media_data:
         return f"<p>Error fetching media data: {media_data.get('error', {}).get('message', 'Unknown error')}</p>"
 
